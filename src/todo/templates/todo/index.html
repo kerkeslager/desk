@@ -12,31 +12,256 @@
     <script src='{% static "core/react-dom@17.0.1/react-dom.development.js" %}'></script>
     <script src='{% static "core/babel-standalone@6.26.0/babel.min.js" %}'></script>
     <script src='{% static "core/util.js" %}'></script>
+
+    <style>
+      body,
+      div,
+      footer,
+      header,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      html,
+      input[type=text],
+      li,
+      main,
+      nav,
+      ul,
+      section,
+      span {
+        border: none;
+        font-weight: normal;
+        margin: 0;
+        padding: 0;
+      }
+
+    </style>
+
+    <style>
+      html {
+        height: 100%;
+        width: 100%;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+
+        width: 100%;
+        min-height: 100%;
+
+        font-family: verdana, sans-serif;
+      }
+
+      nav.site {
+        width: 100%;
+        height: 4rem;
+        margin: 0 0 2rem 0;
+        border-bottom: 1px solid black;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+      }
+
+      header.site {
+        width: 100%;
+        max-width: 40rem;
+        margin-bottom: 1rem;
+      }
+
+      main.site {
+        width: 100%;
+        max-width: 40rem;
+        margin-bottom: 2rem;
+      }
+
+      footer.site {
+        width: 100%;
+        height: 4rem;
+        margin: auto 0 0 0;
+        border-top: 1px solid black;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+
+    <style>
+      #todo-list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+      }
+
+      .todo {
+        width: 100%;
+      }
+
+      .todo form input {
+        padding: 1rem;
+        width: calc(100% - 2rem);
+      }
+
+      ul.todo-list {
+        list-style-type: none;
+        width: 100%;
+      }
+
+      li.task {
+        border: 1px solid black;
+        border-radius: 0.75rem;
+        width: calc(100% - 2px);
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        margin-top: 1rem;
+      }
+
+      li.task.complete {
+        background: rgb(200, 256, 200);
+      }
+
+      li.task input[type=checkbox] {
+        margin: 1rem;
+      }
+
+      li.task .description {
+        margin: 1rem auto 1rem 0;
+      }
+
+      li.task button {
+        margin: 1rem;
+      }
+    </style>
   </head>
 
   <body>
-    <header>
+    <nav class='site'>
+      Nav content
+    </nav>
+
+    <header class='site'>
       <h1>Todo</h1>
     </header>
 
-    <main>
+    <main class='site'>
       <div id='todo-list'>
       </div>
     </main>
 
-    <footer></footer>
+    <footer class='site'>
+      Footer content
+    </footer>
   </body>
 
   <script type='text/babel'>
-    class TodoList extends React.Component {
+    class Task extends React.Component {
+      toggleCheckbox(e) {
+        put(
+          '/api/todo/' + this.props.task.identifier + '/',
+          {
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            data: {
+              is_complete: e.target.checked
+            },
+            onSuccess: this.props.onChange
+          }
+        );
+      }
+
+      deleteTask() {
+        delete_(
+          '/api/todo/' + this.props.task.identifier + '/',
+          {
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            onSuccess: this.props.onChange
+          }
+        );
+      }
+
       render() {
-        return <ul>
-          <li>One</li>
-          <li>Two</li>
-          <li>Three</li>
-          <li>Four</li>
-          <li>Five</li>
-        </ul>;
+        let onCheckboxChanged = e => this.toggleCheckbox(e);
+        let onDeleteButtonPressed = e => this.deleteTask();
+
+        let className = this.props.task.is_complete ? 'task complete' : 'task';
+
+        return <li className={ className }>
+          <input type='checkbox' checked={ this.props.task.is_complete } onChange={onCheckboxChanged}></input>
+          <span className='description'>{ this.props.task.description }</span>
+          <button onClick={onDeleteButtonPressed}>{'Delete'}</button>
+        </li>;
+      }
+    }
+
+    class TodoList extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          tasks: null
+        };
+      }
+
+      componentDidMount() {
+        this.getTasks();
+      }
+
+      getTasks() {
+        get('/api/todo/?order_by=is_complete&order_by=-modified_utc', {
+          onSuccess: response => this.setState({ tasks: response })
+        });
+      }
+
+      render() {
+        if(this.state.tasks === null) {
+          return <div>{ 'Loading...' }</div>;
+        }
+
+        let addTask = e => {
+          e.preventDefault();
+
+          let description = e.target.firstChild.value;
+
+          post('/api/todo/', {
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            data: {
+              description: description
+            },
+            onSuccess: d => {
+              this.getTasks();
+              e.target.firstChild.value = '';
+            }
+          });
+        };
+
+        return <div className='todo'>
+          <form onSubmit={addTask}>
+            <input type='text' placeholder='Add a new task'></input>
+          </form>
+          <ul className='todo-list'>
+            {this.state.tasks.map(
+                t => <Task key={t.identifier} task={t} onChange={e => this.getTasks() }/>
+            )}
+          </ul>
+        </div>;
       }
     }
 

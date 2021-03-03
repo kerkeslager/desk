@@ -8,6 +8,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = (
             'identifier',
             'description',
+            'is_complete',
         )
 
     def create(self, validated_data):
