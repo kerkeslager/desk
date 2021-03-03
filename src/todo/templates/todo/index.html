@@ -1,0 +1,50 @@
+{% load static %}
+<!doctype html>
+
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <title>Todo</title>
+
+    <script src='{% static "core/react@17.0.1/react.development.js" %}'></script>
+    <script src='{% static "core/react-dom@17.0.1/react-dom.development.js" %}'></script>
+    <script src='{% static "core/babel-standalone@6.26.0/babel.min.js" %}'></script>
+    <script src='{% static "core/util.js" %}'></script>
+  </head>
+
+  <body>
+    <header>
+      <h1>Todo</h1>
+    </header>
+
+    <main>
+      <div id='todo-list'>
+      </div>
+    </main>
+
+    <footer></footer>
+  </body>
+
+  <script type='text/babel'>
+    class TodoList extends React.Component {
+      render() {
+        return <ul>
+          <li>One</li>
+          <li>Two</li>
+          <li>Three</li>
+          <li>Four</li>
+          <li>Five</li>
+        </ul>;
+      }
+    }
+
+    ready(() => {
+      ReactDOM.render(
+        <TodoList />,
+        document.getElementById('todo-list')
+      );
+    });
+  </script>
+</html>
