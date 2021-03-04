@@ -19,5 +19,7 @@ from django.urls import path, include
 urlpatterns = (
     path('admin/', admin.site.urls),
     path('todo/', include('todo.urls')),
+    path('weather/', include('weather.urls')),
     path('api/todo/', include('todo.api_urls')),
+    path('api/weather/', include('weather.api_urls')),
 )

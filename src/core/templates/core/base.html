@@ -76,6 +76,10 @@
         justify-content: center;
       }
 
+      nav.site a:not(:first-child) {
+        margin-left: 1rem;
+      }
+
       header.site {
         width: 100%;
         max-width: 40rem;
@@ -108,6 +112,7 @@
     <nav class='site'>
       {% comment %} Make this dynamic based on installed plugins {% endcomment %}
       <a href='/todo/'>Todo</a>
+      <a href='/weather/'>Weather</a>
     </nav>
 
     <header class='site'>

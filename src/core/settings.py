@@ -10,17 +10,17 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '5rd2e#!a=o2%^11mk9w4o0npp^dd(*dfu31s^xiz5%)20jx=9+'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+OPEN_WEATHER_API_KEY = os.environ.get('OPEN_WEATHER_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'todo',
+    'weather',
+
     'core',
 ]
 

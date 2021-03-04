@@ -1,0 +1,112 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Weather{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block header_h1 %}Weather{% endblock %}
+
+{% block main %}
+  <div id='weather'/>
+{% endblock %}
+
+{% block after_body %}
+  <script type='text/babel'>
+    class Temperature extends React.Component {
+      render() {
+        let kelvin = this.props.temperature;
+        let celsius = kelvin - 273.15;
+        let fahrenheit = celsius * 1.8 + 32;
+
+        return <span>{ celsius.toFixed(0) }&deg;C / { fahrenheit.toFixed(0) }&deg;F</span>;
+      }
+    }
+
+    class Forecast extends React.Component {
+      render() {
+        let style = {
+          width: '10rem',
+          height: '10rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid black',
+          borderRadius: '0.5rem',
+          margin: '1rem',
+          paddingLeft: '1rem'
+        };
+
+
+        return <div style={ style }>
+          <div style={ { alignItems: 'flex-start' } }>
+            <h4 style={ { marginBottom: '1rem', alignSelf: 'center' } }>{ this.props.data.timestamp_display }</h4>
+            <table>
+              <tbody>
+                <tr>
+                  <td><img src='{% static "feather/thermometer.svg" %}' style={ { marginRight: '1rem' } }/></td>
+                  <td><Temperature temperature={ this.props.data.temperature }/></td>
+                </tr>
+                <tr>
+                  <td><img src='{% static "feather/cloud-drizzle.svg" %}' style={ { marginRight: '1rem' } }/></td>
+                  <td>{ this.props.data.probability_of_precipitation + '%' }</td>
+                </tr>
+                <tr>
+                  <td><img src='{% static "feather/cloud.svg" %}' style={ { marginRight: '1rem' } }/></td>
+                  <td>{ this.props.data.clouds_percent + '%' }</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>;
+      }
+    }
+
+    class Weather extends React.Component {
+      constructor(props) {
+        super(props);
+
+        this.state = {
+          forecasts: null
+        };
+      }
+
+      componentDidMount() {
+        this.getHourlyForecast();
+      }
+
+      getHourlyForecast() {
+        get(
+          '/api/weather/',
+          {
+            onSuccess: response => this.setHourlyForecast(response)
+          }
+        );
+      }
+
+      setHourlyForecast(response) {
+        console.log('response', response);
+        this.setState({ forecasts: response.forecasts });
+      }
+
+      render() {
+        if(this.state.forecasts === null) {
+          return <div>{ 'Loading...' }</div>;
+        }
+
+        return <ul style={ { display: 'flex', flexDirection: 'row', flexWrap: 'wrap' } }>{
+          this.state.forecasts.map(f => <Forecast key={f.timestamp} data={f}/>)
+        }</ul>;
+      }
+    }
+
+    ready(() => {
+      ReactDOM.render(
+        <Weather />,
+        document.getElementById('weather')
+      );
+    });
+  </script>
+{% endblock %}
