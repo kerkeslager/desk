@@ -4,6 +4,133 @@
 {% block title %}Weather{% endblock %}
 
 {% block extra_head %}
+  <style>
+    .weather {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .forecast-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .forecast {
+      display: flex;
+
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      align-content: center;
+      margin-bottom: 3rem;
+    }
+
+    .forecast time {
+      font-size: 1.5rem;
+      width: 8.5rem;
+      margin-right: 2rem;
+    }
+
+    .forecast .main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 2.5rem;
+
+      width: 8rem;
+    }
+
+    .forecast .main img {
+      width: 8rem;
+      margin-bottom: 1rem;
+    }
+
+    .forecast .main .description {
+      width: 10rem;
+      text-align: center;
+    }
+
+    .temperature {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .property-group {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
+      justify-content: center;
+    }
+
+    .property-group.location {
+      height: 10rem;
+    }
+
+    .property-group.weather-properties {
+      height: 6rem;
+    }
+
+    .property {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      height: 2rem;
+      margin: 0 2rem 1rem 0;
+    }
+
+    .property img {
+      margin-right: 1rem;
+    }
+
+    @media only screen and (max-width: 40rem) {
+      header.site h1 {
+        text-align: center;
+      }
+
+      .weather {
+        align-items: center;
+      }
+
+      .forecast {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .forecast time {
+        width: auto;
+        margin: 0 0 1rem 0;
+      }
+
+      .forecast .main {
+        margin: 0 0 2rem 0;
+      }
+
+      .forecast .main img {
+        margin-bottom: 0.25rem;
+      }
+
+      .property-group {
+        margin-left: 2rem;
+        align-content: center;
+      }
+    }
+
+    @media only screen and (max-width: 20rem) {
+      .property-group.location {
+        height: auto;
+        margin-top: 1rem;
+        margin-bottom: 3rem;
+      }
+
+      .property-group.weather-properties {
+        height: auto;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block header_h1 %}Weather{% endblock %}
@@ -14,53 +141,138 @@
 
 {% block after_body %}
   <script type='text/babel'>
+    class Property extends React.Component {
+      render() {
+        return <div className='property'>
+          <img src={ this.props.image }/>
+          <span>{ this.props.value }</span>
+        </div>;
+      }
+    }
+
+    class Location extends React.Component {
+      render() {
+        return <div className='location property-group'>
+          <Property
+            image='{% static "feather/map-pin.svg" %}'
+            value={ this.props.data.name }/>
+          <Property
+            image='{% static "feather/map.svg" %}'
+            value={ this.props.data.latitude.toFixed(2) + ' / ' + this.props.data.longitude.toFixed(2) }/>
+          <Property
+            image='{% static "feather/clock.svg" %}'
+            value={ this.props.data.timezone }/>
+          <Property
+            image='{% static "feather/sunrise.svg" %}'
+            value={ this.props.data.sunrise }/>
+          <Property
+            image='{% static "feather/sunset.svg" %}'
+            value={ this.props.data.sunset }/>
+        </div>;
+      }
+    }
+
     class Temperature extends React.Component {
       render() {
         let kelvin = this.props.temperature;
         let celsius = kelvin - 273.15;
         let fahrenheit = celsius * 1.8 + 32;
 
-        return <span>{ celsius.toFixed(0) }&deg;C / { fahrenheit.toFixed(0) }&deg;F</span>;
+        return <div className='temperature'>
+          <span>{ celsius.toFixed(0) }&deg;C</span>
+          <span>{ fahrenheit.toFixed(0) }&deg;F</span>
+        </div>;
+      }
+    }
+
+    class VerboseWeather extends React.Component {
+      render() {
+        let imgSrc = null;
+
+        switch(this.props.weather.name) {
+          case 'Clear':
+            switch(this.props.partOfDay) {
+              case 'day':
+                imgSrc = '{% static "feather/sun.svg" %}';
+                break;
+              case 'night':
+                imgSrc = '{% static "feather/moon.svg" %}';
+                break;
+              default:
+                console.error('Error: unknown part of day ' + this.props.partOfDay);
+            }
+            break;
+
+          case 'Clouds':
+            imgSrc = '{% static "feather/cloud.svg" %}';
+            break;
+
+          case 'Drizzle':
+            imgSrc = '{% static "feather/cloud-drizzle.svg" %}';
+            break;
+
+          case 'Rain':
+            imgSrc = '{% static "feather/cloud-rain.svg" %}';
+            break;
+
+          case 'Snow':
+            imgSrc = '{% static "feather/cloud-snow.svg" %}';
+            break;
+
+          case 'Thunderstorm':
+            imgSrc = '{% static "feather/cloud-lightning.svg" %}';
+            break;
+
+          case 'Ash':
+          case 'Dust':
+          case 'Fog':
+          case 'Haze':
+          case 'Mist':
+          case 'Sand':
+          case 'Smoke':
+          case 'Tornado':
+            imgSrc = '{% static "feather/cloud.svg" %}';
+            break;
+
+          default:
+            console.error('Error: Unkown weather type ' + this.props.weather.name);
+        }
+
+        return <div className='main'>
+          <img src={ imgSrc }/>
+          <span className='description'>{ this.props.weather.description }</span>
+        </div>;
       }
     }
 
     class Forecast extends React.Component {
       render() {
-        let style = {
-          width: '10rem',
-          height: '10rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid black',
-          borderRadius: '0.5rem',
-          margin: '1rem',
-          paddingLeft: '1rem'
-        };
+        if(this.props.data.weather.length != 1) {
+          console.error('Unexpected extra weathers');
+        }
 
+        return <li className='forecast'>
+          <time>{ this.props.data.timestamp_display }</time>
 
-        return <div style={ style }>
-          <div style={ { alignItems: 'flex-start' } }>
-            <h4 style={ { marginBottom: '1rem', alignSelf: 'center' } }>{ this.props.data.timestamp_display }</h4>
-            <table>
-              <tbody>
-                <tr>
-                  <td><img src='{% static "feather/thermometer.svg" %}' style={ { marginRight: '1rem' } }/></td>
-                  <td><Temperature temperature={ this.props.data.temperature }/></td>
-                </tr>
-                <tr>
-                  <td><img src='{% static "feather/cloud-drizzle.svg" %}' style={ { marginRight: '1rem' } }/></td>
-                  <td>{ this.props.data.probability_of_precipitation + '%' }</td>
-                </tr>
-                <tr>
-                  <td><img src='{% static "feather/cloud.svg" %}' style={ { marginRight: '1rem' } }/></td>
-                  <td>{ this.props.data.clouds_percent + '%' }</td>
-                </tr>
-              </tbody>
-            </table>
+          <VerboseWeather
+            weather={ this.props.data.weather[0] }
+            partOfDay={ this.props.data.part_of_day }/>
+
+          <div className='weather-properties property-group'>
+            <Property
+              image='{% static "feather/thermometer.svg" %}'
+              value={ <Temperature temperature={ this.props.data.temperature }/> }/>
+            <Property
+              image='{% static "feather/cloud-drizzle.svg" %}'
+              value={ this.props.data.probability_of_precipitation + '%' }/>
+            <Property
+              image='{% static "feather/cloud.svg" %}'
+              value={ this.props.data.clouds_percent + '%' }/>
+            <Property
+              image='{% static "feather/wind.svg" %}'
+              value={ this.props.data.wind_speed + 'm/s' }/>
           </div>
-        </div>;
+        </li>;
       }
     }
 
@@ -88,7 +300,10 @@
 
       setHourlyForecast(response) {
         console.log('response', response);
-        this.setState({ forecasts: response.forecasts });
+        this.setState({
+          location: response.location,
+          forecasts: response.forecasts,
+        });
       }
 
       render() {
@@ -96,9 +311,15 @@
           return <div>{ 'Loading...' }</div>;
         }
 
-        return <ul style={ { display: 'flex', flexDirection: 'row', flexWrap: 'wrap' } }>{
-          this.state.forecasts.map(f => <Forecast key={f.timestamp} data={f}/>)
-        }</ul>;
+        return <div className='weather'>
+          <Location data={ this.state.location }/>
+          <ul className='forecast-list'>{
+            this.state.forecasts.map(f => <Forecast key={f.timestamp} data={f}/>)
+          }</ul>
+          <p>
+            Data from <a href='https://openweathermap.org/' target='_blank'>{'OpenWeatherMap'}</a>.
+          </p>
+        </div>;
       }
     }
 

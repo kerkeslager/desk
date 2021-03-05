@@ -7,8 +7,10 @@ import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-@api_view(('GET',))
-def weather_detail_view(request):
+from core import cache
+
+@cache.memoize(timeout=600)
+def fetch_weather_data(latitude, longitude):
     url = 'https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={api_key}'.format(
         lat=35.045631,
         lon=-85.309677,
@@ -18,10 +20,46 @@ def weather_detail_view(request):
 
     assert response.status_code == 200
 
-    response_json = response.json()
+    return response.json()
+
+
+@api_view(('GET',))
+def weather_detail_view(request):
+    response_json = fetch_weather_data(35.045631, -85.309677)
 
     timezone_offset_seconds = response_json['city']['timezone']
     timezone = datetime.timezone(datetime.timedelta(seconds=timezone_offset_seconds))
+
+    def strf_epoch_time(time, format_string):
+        return datetime.datetime.fromtimestamp(
+            time,
+            tz=timezone,
+        ).strftime(format_string)
+
+    def format_location(city_data):
+        utc_offset_hours = city_data['timezone'] / 60 / 60
+
+        if utc_offset_hours == 0:
+            utc_offset_display = 'UTC'
+        else:
+            utc_offset_display = 'UTC{0:+.2g}'.format(utc_offset_hours)
+
+        sun_event_format = '%-I:%M%p'
+
+        return {
+            'name': city_data['name'],
+            'latitude': city_data['coord']['lat'],
+            'longitude': city_data['coord']['lon'],
+            'timezone': utc_offset_display,
+            'sunrise': strf_epoch_time(
+                city_data['sunrise'],
+                sun_event_format,
+            ),
+            'sunset': strf_epoch_time(
+                city_data['sunset'],
+                sun_event_format,
+            ),
+        }
 
     def format_forecast(forecast_data):
         timestamp = datetime.datetime.fromtimestamp(
@@ -61,5 +99,6 @@ def weather_detail_view(request):
     forecasts = [format_forecast(f) for f in response_json['list'][:24]]
 
     return Response({
+        'location': format_location(response_json['city']),
         'forecasts': forecasts,
     })
