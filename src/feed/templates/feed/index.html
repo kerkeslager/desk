@@ -1,0 +1,129 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Feed{% endblock %}
+
+{% block extra_head %}
+  <style>
+  </style>
+{% endblock %}
+
+{% block header_h1 %}Feed{% endblock %}
+
+{% block main %}
+  <div id='subscribe-widget'/>
+{% endblock %}
+
+{% block after_body %}
+  <script type='text/babel'>
+    class SubscribeWidget extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          pageUri: null,
+          feeds: null,
+          subscribing: false,
+          done: false
+        };
+      }
+
+      render() {
+        let cancel = () => this.setState({
+          pageUri: null,
+          feeds: null,
+          subscribing: false,
+          done: false
+        });
+
+        if(this.state.pageUri === null) {
+          let onSubmit = e => {
+            e.preventDefault();
+
+            let pageUri = e.target.querySelector('input[type=url]').value;
+
+            this.setState({ pageUri: pageUri });
+
+            get(
+              '/api/feed/scrape/',
+              {
+                data: {
+                  uri: pageUri
+                },
+                onSuccess: response => this.setState({ feeds: response.feeds })
+              }
+            );
+          };
+
+          return <form onSubmit={onSubmit}>
+            <input type='url' placeholder='Feed to add'/>
+            <input type='submit'/>
+            <input type='button' onClick={cancel} value='Cancel'/>
+          </form>;
+        }
+
+        if(this.state.feeds === null) {
+          return <p>Finding feeds...</p>;
+        }
+
+        if(!(this.state.subscribing)) {
+          let onSubmit = e => {
+            e.preventDefault();
+
+            let toSubscribe = Array.from(e.target.querySelectorAll(
+              'input[name=subscribe][type=checkbox]'
+            )).filter(
+              checkbox => checkbox.checked
+            ).map(
+              checkbox => checkbox.value
+            );
+
+            let markRead = e.target.querySelector('input[name=mark-read][type=checkbox]').checked;
+
+            this.setState({
+              subscribing: true
+            });
+
+            post('/api/feed/subscribe/', {
+              data: {
+                feeds: toSubscribe
+              },
+              onSuccess: () => {
+                this.setState({ done: true });
+              }
+            });
+          };
+
+          return <form onSubmit={onSubmit}>
+            <p>Select the feeds you wish to add</p>
+            {
+              this.state.feeds.map(feed => {
+                return <span key={feed.uri}>
+                  <input name='subscribe' type='checkbox' defaultChecked={false} value={feed.uri}/>
+                  {feed.title}
+                </span>;
+              })
+            }
+            <span>
+              <input name='mark-read' type='checkbox' defaultChecked={true}/>
+              { 'Should we mark existing items from this feed as read?' }
+            </span>
+            <input type='submit'/>
+            <input type='button' onClick={cancel} value='Cancel'/>
+          </form>;
+        }
+
+        if(!this.state.done) {
+          return <p>{'Subscribing...'}</p>;
+        }
+
+        return <p>{'Done!'}>/p>;
+      }
+    }
+
+    ready(() => {
+      ReactDOM.render(
+        <SubscribeWidget />,
+        document.getElementById('subscribe-widget')
+      );
+    });
+  </script>
+{% endblock %}

@@ -152,6 +152,7 @@
         return <div className='todo'>
           <form onSubmit={addTask}>
             <input type='text' placeholder='Add a new task'></input>
+            <input type='submit'/>
           </form>
           <ul className='todo-list'>
             {this.state.tasks.map(

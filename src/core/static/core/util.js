@@ -7,9 +7,23 @@ function ready(fn) {
 }
 
 function request(method, url, params) {
+  let data = params.data;
+
+  if(!data) {
+    data = {};
+  }
+
   var xhr = new XMLHttpRequest();
 
-  xhr.open(method, url, true);
+  if(method === 'GET' && data) {
+    let urlSuffix = '?' + Object.keys(data).map(
+      key => key + '=' + encodeURIComponent(data[key])
+    ).join('&');
+    xhr.open(method, url + urlSuffix, true);
+  } else {
+    xhr.open(method, url, true);
+  }
+
   xhr.responseType = 'json';
 
   xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
@@ -37,13 +51,11 @@ function request(method, url, params) {
     console.log('There was a connection error of some sort');
   };
 
-  let data = params.data;
-
-  if(!data) {
-    data = {};
+  if(method === 'GET') {
+    xhr.send();
+  } else {
+    xhr.send(JSON.stringify(data));
   }
-
-  xhr.send(JSON.stringify(data));
 }
 
 function get(url, params) {
