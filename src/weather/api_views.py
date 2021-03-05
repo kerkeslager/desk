@@ -4,16 +4,37 @@ from django.conf import settings
 
 import requests
 
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from core import cache
 
+from . import models, serializers
+
+class LocationViewSet(viewsets.ModelViewSet):
+    lookup_field = 'identifier'
+    serializer_class = serializers.LocationSerializer
+
+    def get_queryset(self):
+        return models.Location.objects.filter(user=self.request.user)
+
+location_list_view = LocationViewSet.as_view({
+    'get': 'list',
+    'post': 'create',
+})
+
+location_detail_view = LocationViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'partial_update',
+    'delete': 'destroy',
+})
+
 @cache.memoize(timeout=600)
 def fetch_weather_data(latitude, longitude):
     url = 'https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={api_key}'.format(
-        lat=35.045631,
-        lon=-85.309677,
+        lat=latitude,
+        lon=longitude,
         api_key=settings.OPEN_WEATHER_API_KEY,
     )
     response = requests.get(url)

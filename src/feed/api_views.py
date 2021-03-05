@@ -5,6 +5,8 @@ import requests
 from rest_framework import mixins, status, views, viewsets
 from rest_framework.response import Response
 
+from core import cache
+
 from . import models, serializers
 
 class ItemViewSet(viewsets.ModelViewSet):

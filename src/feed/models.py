@@ -1,7 +1,7 @@
 import uuid
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
 class Item(models.Model):
     identifier = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -10,6 +10,6 @@ class Item(models.Model):
 class Subscription(models.Model):
     identifier = models.UUIDField(default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    canonical_url = models.UrlField()
+    canonical_url = models.URLField()
     feed_uri = models.URLField()
 
