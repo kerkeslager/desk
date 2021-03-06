@@ -136,7 +136,8 @@
 {% block header_h1 %}Weather{% endblock %}
 
 {% block main %}
-  <div id='weather'/>
+  <div id='location'></div>
+  <div id='weather'></div>
 {% endblock %}
 
 {% block after_body %}
@@ -270,9 +271,51 @@
               value={ this.props.data.clouds_percent + '%' }/>
             <Property
               image='{% static "feather/wind.svg" %}'
-              value={ this.props.data.wind_speed + 'm/s' }/>
+              value={ this.props.data.wind_speed.toFixed(0) + 'm/s' }/>
           </div>
         </li>;
+      }
+    }
+
+    class LocationPicker extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          locations: null
+        };
+      }
+
+      componentDidMount() {
+        this.getLocations();
+      }
+
+      getLocations() {
+        get(
+          '/api/weather/location/',
+          {
+            onSuccess: response => this.setLocations(response)
+          }
+        );
+      }
+
+      setLocations(response) {
+        this.setState({
+          locations: response
+        });
+      }
+
+      render() {
+        if(this.state.locations === null) {
+          return 'Loading...';
+        }
+
+        return <select>{
+          this.state.locations.map(location =>
+            <option key={location.identifier} value={location.identifier}>
+              { location.name }
+            </option>
+          )
+        }</select>;
       }
     }
 
@@ -324,6 +367,10 @@
     }
 
     ready(() => {
+      ReactDOM.render(
+        <LocationPicker />,
+        document.getElementById('location')
+      );
       ReactDOM.render(
         <Weather />,
         document.getElementById('weather')
