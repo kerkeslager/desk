@@ -46,7 +46,10 @@ def fetch_weather_data(latitude, longitude):
 
 @api_view(('GET',))
 def weather_detail_view(request):
-    response_json = fetch_weather_data(35.045631, -85.309677)
+    latitude = request.GET['latitude']
+    longitude = request.GET['longitude']
+
+    response_json = fetch_weather_data(latitude, longitude)
 
     timezone_offset_seconds = response_json['city']['timezone']
     timezone = datetime.timezone(datetime.timedelta(seconds=timezone_offset_seconds))

@@ -136,7 +136,6 @@
 {% block header_h1 %}Weather{% endblock %}
 
 {% block main %}
-  <div id='location'></div>
   <div id='weather'></div>
 {% endblock %}
 
@@ -299,6 +298,9 @@
       }
 
       setLocations(response) {
+        if(response) {
+          this.props.onLocationChange(response[0]);
+        }
         this.setState({
           locations: response
         });
@@ -309,17 +311,25 @@
           return 'Loading...';
         }
 
-        return <select>{
-          this.state.locations.map(location =>
+        let onChange = e => {
+          let locationIdentifier = e.target.value;
+          let location = this.state.locations.find(
+            l => l.identifier == locationIdentifier
+          );
+          this.props.onLocationChange(location);
+        };
+
+        return <select onChange={onChange}>
+          {this.state.locations.map(location =>
             <option key={location.identifier} value={location.identifier}>
               { location.name }
             </option>
-          )
-        }</select>;
+          )}
+        </select>;
       }
     }
 
-    class Weather extends React.Component {
+    class WeatherDisplay extends React.Component {
       constructor(props) {
         super(props);
 
@@ -336,13 +346,16 @@
         get(
           '/api/weather/',
           {
+            data: {
+              latitude: this.props.location.latitude,
+              longitude: this.props.location.longitude,
+            },
             onSuccess: response => this.setHourlyForecast(response)
           }
         );
       }
 
       setHourlyForecast(response) {
-        console.log('response', response);
         this.setState({
           location: response.location,
           forecasts: response.forecasts,
@@ -366,13 +379,41 @@
       }
     }
 
+    class Weather extends React.Component {
+      constructor(props) {
+        super(props);
+
+        this.state = {
+          location: null
+        };
+      }
+
+      render() {
+        let onLocationChange = location => {
+          this.setState({
+            location: location
+          });
+        };
+
+        let weatherDisplay = null;
+
+        if(this.state.location !== null) {
+          weatherDisplay = <WeatherDisplay key={this.state.location.identifier}
+            location={this.state.location}/>;
+        }
+
+        console.log('wd',weatherDisplay);
+
+        return <div>
+          <LocationPicker onLocationChange={onLocationChange}/>
+          { weatherDisplay }
+        </div>;
+      }
+    }
+
     ready(() => {
       ReactDOM.render(
-        <LocationPicker />,
-        document.getElementById('location')
-      );
-      ReactDOM.render(
-        <Weather />,
+        <Weather/>,
         document.getElementById('weather')
       );
     });
