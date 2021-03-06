@@ -22,8 +22,10 @@
       border-top: 2px solid black;
     }
 
-    .location-picker .location-list > li.default {
-      font-weight: bold;
+    .location-picker form {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .weather {
@@ -327,13 +329,14 @@
         };
 
         return <div>
-          <LocationForm onAdded={() => this.props.onChange()}/>
+          <LocationForm requestMethod='POST' onAdded={() => this.props.onChange()}/>
           <ul className='location-list'>
             {this.props.locations.map(l => {
-              return <li key={ l.identifier } className={l.is_default ? 'default' : ''}>
+              return <li key={ l.identifier }>
                 { l.is_default ? null : <button onClick={() => setDefault(l)}>Set as default</button> }
+
                 <ul className='location-property-list'>
-                  <li>Name: { l.name }</li>
+                  <li>Name: {l.name} {l.is_default ? '(Default)' : null}</li>
                   <li>Zip: { l.zip_code }</li>
                   <li>Latitude: { l.latitude }</li>
                   <li>Longitude: { l.longitude }</li>
@@ -352,7 +355,7 @@
       render() {
         return <Form
             csrf_token='{{ csrf_token }}'
-            requestMethod='POST'
+            requestMethod={this.props.requestMethod}
             handler='/api/weather/location/'
             onSuccess={response => this.props.onAdded()}>
           <p>Add location</p>
