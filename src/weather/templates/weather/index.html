@@ -276,10 +276,49 @@
       }
     }
 
+    class LocationAdder extends React.Component {
+      render() {
+        let onSubmit = e => {
+          e.preventDefault();
+
+          let form = e.target;
+
+          let data = {};
+
+          Object.keys(form.elements).forEach(key => {
+            let element = form.elements[key];
+            if (element.type !== "submit") {
+              data[element.name] = element.value;
+            }
+          });
+
+          post(
+            '/api/weather/location/',
+            {
+              data: data,
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+              onSuccess: response => this.props.onAdded()
+            },
+          );
+        };
+        return <form onSubmit={onSubmit}>
+          <p>Add location</p>
+          <input name='name' type='text' placeholder='Name'></input>
+          <input name='zip_code' type='text' placeholder='Zip'></input>
+          <input name='latitude' type='number' step='0.000001' placeholder='Latitude'></input>
+          <input name='longitude' type='number' step='0.000001' placeholder='Longitude'></input>
+          <input type='submit'></input>
+        </form>;
+      }
+    }
+
     class LocationPicker extends React.Component {
       constructor(props) {
         super(props);
         this.state = {
+          addingLocation: false,
           locations: null
         };
       }
@@ -311,6 +350,15 @@
           return 'Loading...';
         }
 
+        if(this.state.locations === [] || this.state.addingLocation) {
+          let onAdded = () => {
+            this.setState({addingLocation: false});
+            this.getLocations();
+          };
+
+          return <LocationAdder onAdded={onAdded}/>;
+        }
+
         let onChange = e => {
           let locationIdentifier = e.target.value;
           let location = this.state.locations.find(
@@ -319,13 +367,16 @@
           this.props.onLocationChange(location);
         };
 
-        return <select onChange={onChange}>
-          {this.state.locations.map(location =>
-            <option key={location.identifier} value={location.identifier}>
-              { location.name }
-            </option>
-          )}
-        </select>;
+        return <div>
+          <select onChange={onChange}>
+            {this.state.locations.map(location =>
+              <option key={location.identifier} value={location.identifier}>
+                { location.name }
+              </option>
+            )}
+          </select>
+          <button onClick={e => this.setState({ addingLocation: true })}>Add location</button>
+        </div>;
       }
     }
 
