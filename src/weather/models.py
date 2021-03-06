@@ -12,6 +12,7 @@ zip_code_validator = validators.RegexValidator(
 class Location(models.Model):
     identifier = models.UUIDField(default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_default = models.BooleanField(default=False)
     name = models.CharField(max_length=64, null=True, blank=True)
     zip_code = models.CharField(
         blank=True,

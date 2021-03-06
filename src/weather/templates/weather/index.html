@@ -278,39 +278,19 @@
 
     class LocationAdder extends React.Component {
       render() {
-        let onSubmit = e => {
-          e.preventDefault();
-
-          let form = e.target;
-
-          let data = {};
-
-          Object.keys(form.elements).forEach(key => {
-            let element = form.elements[key];
-            if (element.type !== "submit") {
-              data[element.name] = element.value;
-            }
-          });
-
-          post(
-            '/api/weather/location/',
-            {
-              data: data,
-              headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-              },
-              onSuccess: response => this.props.onAdded()
-            },
-          );
-        };
-        return <form onSubmit={onSubmit}>
+        return <Form
+            csrf_token='{{ csrf_token }}'
+            requestMethod='POST'
+            handler='/api/weather/location/'
+            onSuccess={response => this.props.onAdded()}>
           <p>Add location</p>
+          <input name='is_default' type='checkbox'></input><label htmlFor='is_default'>Make default location</label>
           <input name='name' type='text' placeholder='Name'></input>
           <input name='zip_code' type='text' placeholder='Zip'></input>
           <input name='latitude' type='number' step='0.000001' placeholder='Latitude'></input>
           <input name='longitude' type='number' step='0.000001' placeholder='Longitude'></input>
           <input type='submit'></input>
-        </form>;
+        </Form>;
       }
     }
 
@@ -338,8 +318,11 @@
 
       setLocations(response) {
         if(response) {
-          this.props.onLocationChange(response[0]);
+          let defaultLocation = response.find(l => l.is_default) || response[0];
+
+          if(defaultLocation) this.props.onLocationChange(defaultLocation);
         }
+
         this.setState({
           locations: response
         });
@@ -350,7 +333,7 @@
           return 'Loading...';
         }
 
-        if(this.state.locations === [] || this.state.addingLocation) {
+        if(this.state.locations.length === 0 || this.state.addingLocation) {
           let onAdded = () => {
             this.setState({addingLocation: false});
             this.getLocations();
@@ -359,18 +342,29 @@
           return <LocationAdder onAdded={onAdded}/>;
         }
 
-        let onChange = e => {
-          let locationIdentifier = e.target.value;
+        if(this.state.locations.length === 1) {
+          return <div>
+            <span>Location: { this.state.locations[0].name }</span>
+            <LocationAdder onAdded{onAdded}/>
+          </div>
+        }
+
+        let handleChange = e => {
           let location = this.state.locations.find(
-            l => l.identifier == locationIdentifier
+            l => l.identifier == e.target.value
           );
           this.props.onLocationChange(location);
         };
 
+        let defaultLocation = this.state.locations.find(l => l.is_default);
+
         return <div>
-          <select onChange={onChange}>
+          <select defaultValue={defaultLocation.identifier} onChange={handleChange}>
             {this.state.locations.map(location =>
-              <option key={location.identifier} value={location.identifier}>
+              <option
+                  key={location.identifier}
+                  onChange={handleChange}
+                  value={location.identifier}>
                 { location.name }
               </option>
             )}
@@ -452,8 +446,6 @@
           weatherDisplay = <WeatherDisplay key={this.state.location.identifier}
             location={this.state.location}/>;
         }
-
-        console.log('wd',weatherDisplay);
 
         return <div>
           <LocationPicker onLocationChange={onLocationChange}/>

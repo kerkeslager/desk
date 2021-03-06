@@ -16,6 +16,7 @@ class LocationSerializer(serializers.ModelSerializer):
         fields = (
             'identifier',
             'name',
+            'is_default',
             'zip_code',
             'latitude',
             'longitude',
@@ -31,7 +32,18 @@ class LocationSerializer(serializers.ModelSerializer):
     )
 
     def create(self, validated_data):
+        user = self.context['request'].user
+
+        if 'is_default' in validated_data and validated_data['is_default']:
+            models.Location.objects.filter(
+                user=user,
+                is_default=True,
+            ).update(is_default=False)
+
+        if models.Location.objects.filter(user=user, is_default=True).count() == 0:
+            validated_data['is_default'] = True
+
         return models.Location.objects.create(
-            user=self.context['request'].user,
+            user=user,
             **validated_data,
         )
