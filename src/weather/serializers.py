@@ -22,7 +22,7 @@ class LocationSerializer(serializers.ModelSerializer):
             'longitude',
         )
 
-    is_default = serializers.BooleanField()
+    is_default = serializers.BooleanField(required=False)
     latitude = RoundingDecimalField(
         decimal_places=6,
         max_digits=9,

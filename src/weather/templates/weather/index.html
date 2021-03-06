@@ -17,12 +17,29 @@
       margin-left: 1rem;
     }
 
-    .location-picker .location-list > li {
+    .location-manager {
+      width: 100%;
+    }
+
+    .location-manager .location-list > li {
       padding: 1rem 0;
       border-top: 2px solid black;
     }
 
-    .location-picker form {
+    .location-manager .location-list > li > nav {
+      margin-top: 0.5rem;
+    }
+
+    .location-manager .location-list > li > nav > button,
+    .location-manager .location-list > li > nav > span.delete-button {
+      margin: 0 0.25rem;
+    }
+
+    .location-manager .location-list > li > nav > button:first-child {
+      margin-left: 0;
+    }
+
+    .location-manager form {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -328,13 +345,13 @@
           );
         };
 
-        return <div>
-          <LocationForm requestMethod='POST' onAdded={() => this.props.onChange()}/>
+        return <div className='location-manager'>
+          <LocationForm
+            requestMethod='POST'
+            onAdded={() => this.props.onChange()}/>
           <ul className='location-list'>
             {this.props.locations.map(l => {
               return <li key={ l.identifier }>
-                { l.is_default ? null : <button onClick={() => setDefault(l)}>Set as default</button> }
-
                 <ul className='location-property-list'>
                   <li>Name: {l.name} {l.is_default ? '(Default)' : null}</li>
                   <li>Zip: { l.zip_code }</li>
@@ -342,7 +359,15 @@
                   <li>Longitude: { l.longitude }</li>
                 </ul>
 
-                { l.is_default ? null : <DeleteButton onDelete={() => handleDelete(l)}/> }
+                {
+                  l.is_default
+                  ? null
+                  : <nav>
+                    <button onClick={() => setDefault(l)}>Set as default</button>
+                    |
+                    <DeleteButton onDelete={() => handleDelete(l)}/>
+                  </nav>
+                }
               </li>;
             })}
           </ul>

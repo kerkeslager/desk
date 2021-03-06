@@ -33,7 +33,11 @@ class Form extends React.Component {
 
       Object.keys(form.elements).forEach(key => {
         let element = form.elements[key];
-        if (element.type !== "submit") {
+        if (element.type === "submit") {
+          // Do nothing
+        } else if(element.type === 'checkbox') {
+          data[element.name] = element.checked;
+        } else {
           data[element.name] = element.value;
         }
       });
@@ -46,7 +50,14 @@ class Form extends React.Component {
           headers: {
             'X-CSRFToken': this.props.csrf_token
           },
-          onSuccess: this.props.onSuccess
+          onSuccess: () => {
+            this.props.onSuccess();
+            Object.keys(form.elements).forEach(key => {
+              e = form.elements[key];
+
+              if(e.type !== 'submit') e.value = '';
+            });
+          }
         }
       );
     };
