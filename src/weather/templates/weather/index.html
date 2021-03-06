@@ -5,6 +5,27 @@
 
 {% block extra_head %}
   <style>
+    .location-picker {
+      margin: 0 0 1rem 0;
+
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .location-picker > :not(:first-child) {
+      margin-left: 1rem;
+    }
+
+    .location-picker .location-list > li {
+      padding: 1rem 0;
+      border-top: 2px solid black;
+    }
+
+    .location-picker .location-list > li.default {
+      font-weight: bold;
+    }
+
     .weather {
       display: flex;
       flex-direction: column;
@@ -289,13 +310,36 @@
             }
           );
         };
+
+        let setDefault = location => {
+          put(
+            '/api/weather/location/' + location.identifier + '/',
+            {
+              headers: {
+                'X-CSRFToken': this.props.csrf_token
+              },
+              data: {
+                'is_default': true
+              },
+              onSuccess: response => this.props.onChange()
+            }
+          );
+        };
+
         return <div>
           <LocationForm onAdded={() => this.props.onChange()}/>
-          <ul>
+          <ul className='location-list'>
             {this.props.locations.map(l => {
-              return <li key={ l.identifier }>
-                { l.name }
-                <button onClick={e => handleDelete(l)}>Delete</button>
+              return <li key={ l.identifier } className={l.is_default ? 'default' : ''}>
+                { l.is_default ? null : <button onClick={() => setDefault(l)}>Set as default</button> }
+                <ul className='location-property-list'>
+                  <li>Name: { l.name }</li>
+                  <li>Zip: { l.zip_code }</li>
+                  <li>Latitude: { l.latitude }</li>
+                  <li>Longitude: { l.longitude }</li>
+                </ul>
+
+                { l.is_default ? null : <DeleteButton onDelete={() => handleDelete(l)}/> }
               </li>;
             })}
           </ul>
@@ -366,15 +410,17 @@
 
           let onComplete = () => this.setState({ managingLocations: false });
 
-          return <LocationManager
+          return <div className='location-picker'>
+            <LocationManager
               csrf_token='{{csrf_token}}'
               locations={this.state.locations}
               onChange={onChange}
-              onComplete={onComplete}/>;
+              onComplete={onComplete}/>
+          </div>;
         }
 
         if(this.state.locations.length === 1) {
-          return <div>
+          return <div className='location-picker'>
             <span>Location: { this.state.locations[0].name }</span>
             <button onClick={e => this.setState({ managingLocations: true })}>Manage locations</button>
           </div>
@@ -389,7 +435,7 @@
 
         let defaultLocation = this.state.locations.find(l => l.is_default) || this.state.locations[0];
 
-        return <div>
+        return <div className='location-picker'>
           <select defaultValue={defaultLocation.identifier} onChange={handleChange}>
             {this.state.locations.map(location =>
               <option

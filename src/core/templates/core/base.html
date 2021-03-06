@@ -16,6 +16,7 @@
 
     <style>
       body,
+      button,
       div,
       footer,
       header,
@@ -29,11 +30,14 @@
       li,
       main,
       nav,
+      option,
       ul,
       section,
+      select,
       span {
         border: none;
-        font-weight: normal;
+        font-family: inherit;
+        font-weight: inherit;
         margin: 0;
         padding: 0;
       }
@@ -44,6 +48,18 @@
       a:link,
       a:visited {
         color: inherit;
+      }
+
+      ul {
+        list-style-type: none;
+      }
+
+      button,
+      input,
+      option,
+      select {
+        background: inherit;
+        font-size: inherit;
       }
     </style>
 
@@ -63,6 +79,16 @@
         min-height: 100%;
 
         font-family: verdana, sans-serif;
+      }
+
+      button,
+      input[type=submit] {
+        border-bottom: 1px solid black;
+        cursor: pointer;
+      }
+
+      span.delete-button button {
+        margin: 0 0.25rem;
       }
 
       nav.site {

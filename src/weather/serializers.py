@@ -22,6 +22,7 @@ class LocationSerializer(serializers.ModelSerializer):
             'longitude',
         )
 
+    is_default = serializers.BooleanField()
     latitude = RoundingDecimalField(
         decimal_places=6,
         max_digits=9,
@@ -34,16 +35,24 @@ class LocationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
 
-        if 'is_default' in validated_data and validated_data['is_default']:
-            models.Location.objects.filter(
-                user=user,
-                is_default=True,
-            ).update(is_default=False)
+        set_default = validated_data.pop('is_default',False)
 
-        if models.Location.objects.filter(user=user, is_default=True).count() == 0:
-            validated_data['is_default'] = True
-
-        return models.Location.objects.create(
+        result = models.Location.objects.create(
             user=user,
             **validated_data,
         )
+
+        if set_default:
+            result.is_default = True
+
+        return result
+
+    def update(self, instance, validated_data):
+        set_default = validated_data.pop('is_default',False)
+
+        result = super().update(instance, validated_data)
+
+        if set_default:
+            result.is_default = True
+
+        return result

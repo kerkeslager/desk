@@ -1,3 +1,27 @@
+class DeleteButton extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isConfirming: false
+    };
+  }
+
+  render() {
+    if(this.state.isConfirming) {
+      return <span className='delete-button'>
+        Are you sure?
+        <button onClick={() => this.props.onDelete()}>Delete</button>
+        |
+        <button onClick={() => this.setState({ isConfirming: false})}>Cancel</button>
+      </span>;
+    }
+
+    return <button onClick={() => this.setState({ isConfirming: true})}>
+      Delete
+    </button>;
+  }
+}
+
 class Form extends React.Component {
   render() {
     let handleSubmit = e => {
