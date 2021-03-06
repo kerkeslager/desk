@@ -276,7 +276,35 @@
       }
     }
 
-    class LocationAdder extends React.Component {
+    class LocationManager extends React.Component {
+      render() {
+        let handleDelete = location => {
+          delete_(
+            '/api/weather/location/' + location.identifier + '/',
+            {
+              headers: {
+                'X-CSRFToken': this.props.csrf_token
+              },
+              onSuccess: response => this.props.onChange()
+            }
+          );
+        };
+        return <div>
+          <LocationForm onAdded={() => this.props.onChange()}/>
+          <ul>
+            {this.props.locations.map(l => {
+              return <li key={ l.identifier }>
+                { l.name }
+                <button onClick={e => handleDelete(l)}>Delete</button>
+              </li>;
+            })}
+          </ul>
+          <button onClick={() => this.props.onComplete()}>Done</button>
+        </div>;
+      }
+    }
+
+    class LocationForm extends React.Component {
       render() {
         return <Form
             csrf_token='{{ csrf_token }}'
@@ -298,7 +326,7 @@
       constructor(props) {
         super(props);
         this.state = {
-          addingLocation: false,
+          managingLocations: false,
           locations: null
         };
       }
@@ -333,19 +361,22 @@
           return 'Loading...';
         }
 
-        if(this.state.locations.length === 0 || this.state.addingLocation) {
-          let onAdded = () => {
-            this.setState({addingLocation: false});
-            this.getLocations();
-          };
+        if(this.state.locations.length === 0 || this.state.managingLocations) {
+          let onChange = () => this.getLocations();
 
-          return <LocationAdder onAdded={onAdded}/>;
+          let onComplete = () => this.setState({ managingLocations: false });
+
+          return <LocationManager
+              csrf_token='{{csrf_token}}'
+              locations={this.state.locations}
+              onChange={onChange}
+              onComplete={onComplete}/>;
         }
 
         if(this.state.locations.length === 1) {
           return <div>
             <span>Location: { this.state.locations[0].name }</span>
-            <LocationAdder onAdded{onAdded}/>
+            <button onClick={e => this.setState({ managingLocations: true })}>Manage locations</button>
           </div>
         }
 
@@ -356,7 +387,7 @@
           this.props.onLocationChange(location);
         };
 
-        let defaultLocation = this.state.locations.find(l => l.is_default);
+        let defaultLocation = this.state.locations.find(l => l.is_default) || this.state.locations[0];
 
         return <div>
           <select defaultValue={defaultLocation.identifier} onChange={handleChange}>
@@ -369,7 +400,7 @@
               </option>
             )}
           </select>
-          <button onClick={e => this.setState({ addingLocation: true })}>Add location</button>
+          <button onClick={e => this.setState({ managingLocations: true })}>Manage locations</button>
         </div>;
       }
     }
