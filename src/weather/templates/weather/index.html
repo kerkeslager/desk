@@ -17,19 +17,6 @@
       margin-left: 1rem;
     }
 
-    .location-manager {
-      width: 100%;
-    }
-
-    .location-manager > form:first-child {
-      margin-bottom: 1rem;
-    }
-
-    .model-editor-list > .model-editor {
-      margin-top: 1rem;
-      border-top: 1px solid black;
-    }
-
     .weather {
       display: flex;
       flex-direction: column;
@@ -301,58 +288,6 @@
       }
     }
 
-    class LocationManager extends React.Component {
-      render() {
-
-        let endpoint = this.props.endpoint;
-        let fields = this.props.fields;
-
-        let getEditor = location => {
-          let extraNav = null;
-
-          if(!(location.is_default)) {
-            let setDefault = () => {
-              put(
-                endpoint + location.identifier + '/',
-                {
-                  headers: {
-                    'X-CSRFToken': this.props.csrf_token
-                  },
-                  data: {
-                    'is_default': true
-                  },
-                  onSuccess: response => this.props.onChange()
-                }
-              );
-            };
-            extraNav = <button onClick={setDefault}>Set as default</button>;
-          }
-
-          return <ModelEditor
-              csrf_token={this.props.csrf_token}
-              deletable={!(location.is_default)}
-              endpoint={endpoint}
-              extraNav={extraNav}
-              fields={fields}
-              instance={location}
-              onDelete={this.props.onChange}
-              onEdit={this.props.onChange}/>;
-        };
-
-        return <div className='location-manager'>
-          <ModelForm
-            csrf_token={ this.props.csrf_token }
-            endpoint={endpoint}
-            fields={fields}
-            onSave={response => this.props.onChange()}/>
-          <div className='model-editor-list'>
-            {this.props.instanceList.map(getEditor)}
-          </div>
-          <button onClick={() => this.props.onComplete()}>Done</button>
-        </div>;
-      }
-    }
-
     class LocationPicker extends React.Component {
       constructor(props) {
         super(props);
@@ -393,19 +328,41 @@
         }
 
         if(this.state.locations.length === 0 || this.state.managingLocations) {
-          let onChange = () => this.getLocations();
+          let csrf_token = '{{csrf_token}}';
           let onComplete = () => this.setState({ managingLocations: false });
 
           let endpoint = '/api/weather/location/';
           let fields=['name', 'zip_code', 'latitude', 'longitude'];
 
+          let getExtraNav = (instance, triggerManagerRefresh) => {
+            if(instance.is_default) return null;
+
+            let setDefault = () => {
+              put(
+                endpoint + instance.identifier + '/',
+                {
+                  headers: {
+                    'X-CSRFToken': csrf_token
+                  },
+                  data: {
+                    'is_default': true
+                  },
+                  onSuccess: response => triggerManagerRefresh()
+                }
+              );
+            };
+            return <button onClick={setDefault}>Set as default</button>;
+          }
+
           return <div className='location-picker'>
-            <LocationManager
-              csrf_token='{{csrf_token}}'
+            <ModelManager
+              csrf_token={csrf_token}
               endpoint={endpoint}
               fields={fields}
+              getDeletable={location => !(location.is_default)}
+              getEditable={location => true}
+              getExtraNav={getExtraNav}
               instanceList={this.state.locations}
-              onChange={onChange}
               onComplete={onComplete}/>
           </div>;
         }

@@ -263,7 +263,7 @@ class ModelEditor extends React.Component {
         );
       };
 
-      deleteButton = <button onClick={handleDelete}>Delete</button>;
+      deleteButton = <DeleteButton onDelete={handleDelete}/>;
     }
 
     return <div className='model-editor'>
@@ -284,3 +284,61 @@ ModelEditor.defaultProps = {
   editable: true,
   deletable: true
 };
+
+class ModelManager extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      instanceList: null
+    };
+  }
+
+  componentDidMount() {
+    this.getInstanceList();
+  }
+
+  getInstanceList() {
+    let endpoint = this.props.endpoint;
+    get(endpoint, { onSuccess: r => this.setState({instanceList: r}) });
+  }
+
+  render() {
+    if(this.state.instanceList === null) {
+      return 'Loading...';
+    }
+
+    let endpoint = this.props.endpoint;
+    let fields = this.props.fields;
+    let getDeletable = this.props.getDeletable || (instance => true);
+    let getEditable = this.props.getEditable || (instance => true);
+    let getExtraNav = this.props.getExtraNav || ((instance, triggerManagerRefresh) => null);
+
+    let handleChange = () => this.getInstanceList();
+
+    let getEditor = instance => {
+      return <ModelEditor
+          key={instance.identifier}
+          csrf_token={this.props.csrf_token}
+          deletable={getDeletable(instance)}
+          editable={getEditable(instance)}
+          endpoint={endpoint}
+          extraNav={getExtraNav(instance, handleChange)}
+          fields={fields}
+          instance={instance}
+          onDelete={handleChange}
+          onEdit={handleChange}/>;
+    };
+
+    return <div className='model-manager'>
+      <ModelForm
+        csrf_token={ this.props.csrf_token }
+        endpoint={endpoint}
+        fields={fields}
+        onSave={handleChange}/>
+      <div className='model-editor-list'>
+        {this.state.instanceList.map(getEditor)}
+      </div>
+      <button onClick={() => this.props.onComplete()}>Done</button>
+    </div>;
+  }
+}
