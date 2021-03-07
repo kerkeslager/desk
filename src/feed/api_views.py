@@ -87,6 +87,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
 subscription_list_view = SubscriptionViewSet.as_view({
     'get': 'list',
+    'post': 'create',
 })
 
 subscription_detail_view = SubscriptionViewSet.as_view({

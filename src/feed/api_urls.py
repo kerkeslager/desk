@@ -8,5 +8,5 @@ urlpatterns = (
     path('scrape/', api_views.scrape_view),
     path('subscribe/', api_views.subscribe_view),
     path('subscription/', api_views.subscription_list_view),
-    path('subscription/<uuid:identifier>/', api_views.subscription_list_view),
+    path('subscription/<uuid:identifier>/', api_views.subscription_detail_view),
 )

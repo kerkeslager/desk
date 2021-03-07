@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Manage Subscriptions{% endblock %}
+
+{% block extra_head %}
+  <style>
+  </style>
+{% endblock %}
+
+{% block header_h1 %}Manage Subscriptions{% endblock %}
+
+{% block main %}
+  <div id='subscription-manager'/>
+{% endblock %}
+
+{% block after_body %}
+  <script type='text/babel'>
+    ready(() => {
+      ReactDOM.render(
+        <ModelManager
+            csrf_token='{{ csrf_token }}'
+            endpoint='/api/feed/subscription/'
+            fields={[ 'feed_uri', 'title', 'link', 'description' ]}/>,
+        document.getElementById('subscription-manager')
+      );
+    });
+  </script>
+{% endblock %}

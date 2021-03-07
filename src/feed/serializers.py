@@ -32,7 +32,18 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
-        models = models.Subscription
+        model = models.Subscription
         fields = (
             'identifier',
+            'feed_uri',
+            'title',
+            'link',
+            'description',
+        )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        return models.Subscription.objects.create(
+            user=user,
+            **validated_data,
         )
