@@ -130,6 +130,46 @@
         align-items: center;
         justify-content: center;
       }
+
+      .error {
+        color: red;
+      }
+
+      nav.horizontal > * {
+        margin: 0 0.25rem;
+      }
+
+      nav.horizontal > *:first-child {
+        margin-left: 0;
+      }
+
+      nav.horizontal > *:last-child {
+        margin-right: 0;
+      }
+
+      form.model-form .fields {
+        display: grid;
+        grid-template-columns: min-content min-content auto;
+        grid-auto-rows: auto;
+        grid-column-gap: 0.5rem;
+      }
+
+      form.model-form nav,
+      .model-editor > nav {
+        margin-top: 0.5rem;
+      }
+
+      .model-display {
+        display: grid;
+        grid-template-columns: repeat(2, min-content);
+        grid-auto-rows: auto;
+        grid-column-gap: 0.5rem;
+      }
+
+      .model-editor > form.model-form,
+      .model-editor > .model-display {
+        margin-top: 1rem;
+      }
     </style>
 
     {% block extra_head %}{% endblock %}

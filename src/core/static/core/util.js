@@ -7,11 +7,9 @@ function ready(fn) {
 }
 
 function request(method, url, params) {
-  let data = params.data;
-
-  if(!data) {
-    data = {};
-  }
+  let data = params.data || {};
+  let onFailure = params.onFailure || (response => { });
+  let onSuccess = params.onSuccess || (response => { });
 
   var xhr = new XMLHttpRequest();
 
@@ -35,15 +33,13 @@ function request(method, url, params) {
   }
 
   xhr.onload = () => {
-    if (xhr.status >= 200 && xhr.status < 400) {
-      var data = xhr.response;
+    var data = xhr.response;
 
-      if(params.onSuccess) {
-        params.onSuccess(data);
-      }
+    if (xhr.status >= 200 && xhr.status < 400) {
+      onSuccess(data);
     } else {
-      console.log('We reached our target server, but it returned an error');
-      console.log(xhr);
+      // We reached our target server, but it returned an error
+      onFailure(data);
     }
   };
 

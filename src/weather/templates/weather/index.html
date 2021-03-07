@@ -21,28 +21,13 @@
       width: 100%;
     }
 
-    .location-manager .location-list > li {
-      padding: 1rem 0;
-      border-top: 2px solid black;
+    .location-manager > form:first-child {
+      margin-bottom: 1rem;
     }
 
-    .location-manager .location-list > li > nav {
-      margin-top: 0.5rem;
-    }
-
-    .location-manager .location-list > li > nav > button,
-    .location-manager .location-list > li > nav > span.delete-button {
-      margin: 0 0.25rem;
-    }
-
-    .location-manager .location-list > li > nav > button:first-child {
-      margin-left: 0;
-    }
-
-    .location-manager form {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+    .model-editor-list > .model-editor {
+      margin-top: 1rem;
+      border-top: 1px solid black;
     }
 
     .weather {
@@ -318,79 +303,53 @@
 
     class LocationManager extends React.Component {
       render() {
-        let handleDelete = location => {
-          delete_(
-            '/api/weather/location/' + location.identifier + '/',
-            {
-              headers: {
-                'X-CSRFToken': this.props.csrf_token
-              },
-              onSuccess: response => this.props.onChange()
-            }
-          );
-        };
 
-        let setDefault = location => {
-          put(
-            '/api/weather/location/' + location.identifier + '/',
-            {
-              headers: {
-                'X-CSRFToken': this.props.csrf_token
-              },
-              data: {
-                'is_default': true
-              },
-              onSuccess: response => this.props.onChange()
-            }
-          );
+        let endpoint = this.props.endpoint;
+        let fields = this.props.fields;
+
+        let getEditor = location => {
+          let extraNav = null;
+
+          if(!(location.is_default)) {
+            let setDefault = () => {
+              put(
+                endpoint + location.identifier + '/',
+                {
+                  headers: {
+                    'X-CSRFToken': this.props.csrf_token
+                  },
+                  data: {
+                    'is_default': true
+                  },
+                  onSuccess: response => this.props.onChange()
+                }
+              );
+            };
+            extraNav = <button onClick={setDefault}>Set as default</button>;
+          }
+
+          return <ModelEditor
+              csrf_token={this.props.csrf_token}
+              deletable={!(location.is_default)}
+              endpoint={endpoint}
+              extraNav={extraNav}
+              fields={fields}
+              instance={location}
+              onDelete={this.props.onChange}
+              onEdit={this.props.onChange}/>;
         };
 
         return <div className='location-manager'>
-          <LocationForm
-            requestMethod='POST'
-            onAdded={() => this.props.onChange()}/>
-          <ul className='location-list'>
-            {this.props.locations.map(l => {
-              return <li key={ l.identifier }>
-                <ul className='location-property-list'>
-                  <li>Name: {l.name} {l.is_default ? '(Default)' : null}</li>
-                  <li>Zip: { l.zip_code }</li>
-                  <li>Latitude: { l.latitude }</li>
-                  <li>Longitude: { l.longitude }</li>
-                </ul>
-
-                {
-                  l.is_default
-                  ? null
-                  : <nav>
-                    <button onClick={() => setDefault(l)}>Set as default</button>
-                    |
-                    <DeleteButton onDelete={() => handleDelete(l)}/>
-                  </nav>
-                }
-              </li>;
-            })}
-          </ul>
+          <ModelForm
+            csrf_token={ this.props.csrf_token }
+            endpoint={endpoint}
+            fields={fields}
+            onSave={response => this.props.onChange()}/>
+          <div className='model-editor-list'>
+            {this.props.instanceList.map(getEditor)}
+          </div>
           <button onClick={() => this.props.onComplete()}>Done</button>
         </div>;
-      }
-    }
-
-    class LocationForm extends React.Component {
-      render() {
-        return <Form
-            csrf_token='{{ csrf_token }}'
-            requestMethod={this.props.requestMethod}
-            handler='/api/weather/location/'
-            onSuccess={response => this.props.onAdded()}>
-          <p>Add location</p>
-          <input name='is_default' type='checkbox'></input><label htmlFor='is_default'>Make default location</label>
-          <input name='name' type='text' placeholder='Name'></input>
-          <input name='zip_code' type='text' placeholder='Zip'></input>
-          <input name='latitude' type='number' step='0.000001' placeholder='Latitude'></input>
-          <input name='longitude' type='number' step='0.000001' placeholder='Longitude'></input>
-          <input type='submit'></input>
-        </Form>;
       }
     }
 
@@ -435,13 +394,17 @@
 
         if(this.state.locations.length === 0 || this.state.managingLocations) {
           let onChange = () => this.getLocations();
-
           let onComplete = () => this.setState({ managingLocations: false });
+
+          let endpoint = '/api/weather/location/';
+          let fields=['name', 'zip_code', 'latitude', 'longitude'];
 
           return <div className='location-picker'>
             <LocationManager
               csrf_token='{{csrf_token}}'
-              locations={this.state.locations}
+              endpoint={endpoint}
+              fields={fields}
+              instanceList={this.state.locations}
               onChange={onChange}
               onComplete={onComplete}/>
           </div>;
