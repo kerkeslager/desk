@@ -8,29 +8,76 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = (
             'identifier',
             'is_read',
+            'link',
+            'title',
+            'author',
+            'description',
+            'content',
+        )
+        read_only_fields = (
+            'identifier',
+            'link',
+            'title',
+            'author',
+            'description',
+            'content',
         )
 
-class ScrapeSerializer(serializers.Serializer):
-    uri = serializers.URLField()
+    def run_validation(self, data=None):
+        if data == None:
+            return super().run_validation()
 
-class SubscribeSerializer(serializers.ModelSerializer):
-    class Meta:
-        models = models.Subscription
-        fields = (
-            'url',
-            'mark_existing_read',
-        )
+        if not data:
+            return super().run_validation(data)
 
-    url = serializers.URLField()
-    mark_existing_read = serializers.BooleanField()
+        read_only_errors = {
+            key: 'This field is read-only'
+            for key in data
+            if self.fields.get(key) and self.fields[key].read_only
+        }
 
-    def create(self, **validated_data):
-        uri = validated_data['uri']
-        mark_existing_read = validated_data['mark_existing_read']
+        if read_only_errors:
+            raise serializers.ValidationError(read_only_errors)
 
-        models.Subscription.objects.create
+        return super().run_validation(data)
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Subscription
+        fields = (
+            'identifier',
+            'feed_uri',
+            'link',
+            'title',
+            'description',
+        )
+
+
+class SubscriptionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Subscription
+        fields = (
+            'feed_uri',
+            'mark_read',
+        )
+
+    mark_read = serializers.BooleanField(default=False)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        mark_read = validated_data.pop('mark_read')
+        instance = models.Subscription.objects.create(
+            user=user,
+            **validated_data,
+        )
+        instance.refresh()
+
+        if mark_read:
+            instance.items.update(is_read=True)
+
+        return instance
+
+class SubscriptionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Subscription
         fields = (
@@ -39,11 +86,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'title',
             'link',
             'description',
+            'items',
         )
 
-    def create(self, validated_data):
-        user = self.context['request'].user
-        return models.Subscription.objects.create(
-            user=user,
-            **validated_data,
-        )
+    items = ItemSerializer(many=True)
